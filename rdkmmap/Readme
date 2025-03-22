@@ -1,0 +1,7 @@
+# For local build
+make
+
+# For cross-compilation for aarch64 (BPI-R4)
+make aarch64
+
+./rdkmmap
