@@ -1,0 +1,105 @@
+nk-wps$ sudo ./netlink-button-monitor2 -f -c -d
+netlink-button-monitor[5634]: Netlink button monitor daemon starting up
+Netlink button monitor daemon starting up
+netlink-button-monitor[5634]: Netlink socket initialized successfully
+netlink-button-monitor[5634]: Scanning existing input devices
+Scanning existing input devices
+netlink-button-monitor[5634]: Found input device: /dev/input/event0
+Found input device: /dev/input/event0
+netlink-button-monitor[5634]: Started monitoring thread for device: /dev/input/event0
+netlink-button-monitor[5634]: Found input device: /dev/input/event1
+Found input device: /dev/input/event1
+netlink-button-monitor[5634]: Found input device: /dev/input/event2
+Found input device: /dev/input/event2
+netlink-button-monitor[5634]: Found input device: /dev/input/event3
+Found input device: /dev/input/event3
+netlink-button-monitor[5634]: Using custom WPS button callback
+Using custom WPS button callback
+netlink-button-monitor[5634]: Netlink button monitor daemon started successfully
+Netlink button monitor daemon started successfully
+Press Ctrl+C to exit
+Currently monitoring the following input devices:
+  - /dev/input/event0
+  - /dev/input/event1
+  - /dev/input/event2
+  - /dev/input/event3
+netlink-button-monitor[5634]: Started monitoring thread for device: /dev/input/event1
+Started monitoring thread for device: /dev/input/event1
+netlink-button-monitor[5634]: Started monitoring thread for device: /dev/input/event2
+Started monitoring thread for device: /dev/input/event2
+netlink-button-monitor[5634]: Started monitoring thread for device: /dev/input/event3
+Started monitoring thread for device: /dev/input/event3
+netlink-button-monitor[5634]: Netlink event monitoring thread started
+Netlink event monitoring thread started
+Started monitoring thread for device: /dev/input/event0
+netlink-button-monitor[5634]: WPS button pressed on device /dev/input/event3 - triggering WPS action
+WPS button pressed on device /dev/input/event3 - triggering WPS action
+
+
+
+tor$ sudo python3 virtual-wps.py 
+Virtual WPS Button created
+Device path: device /dev/input/event3, name "Virtual WPS Button", phys "py-evdev-uinput", uniq ""
+
+Usage:
+- Run 'sudo evtest' in another terminal to see the device
+- Press Enter to simulate a WPS button press
+- Press Ctrl+C to exit
+Press Enter to simulate WPS button press...
+WPS button pressed
+WPS button released
+Press Enter to simulate WPS button press...
+WPS button pressed
+WPS button released
+Press Enter to simulate WPS button press...
+
+//--
+This code implements a daemon (background service) for Linux systems that monitors buttons on input devices, with a specific focus on WPS (Wi-Fi Protected Setup) buttons. Let me break down what it does:
+Core Functionality
+The program is a netlink-based button monitor that:
+
+Listens for hardware button press events from input devices (like keyboards, front panel buttons, etc.)
+Detects when devices are added or removed from the system
+Has special handling for WPS buttons (used for easy Wi-Fi setup)
+Runs as a daemon in the background
+
+Main Components
+1. Device Monitoring
+
+Scans and monitors all input devices (typically found in /dev/input/event*)
+Creates a separate thread for each input device to listen for button events
+Handles device hot-plugging (adding/removing devices while running)
+
+2. Netlink Monitoring
+
+Uses Linux's netlink socket interface to receive kernel events
+Listens for device addition/removal events from the kernel
+Updates the list of monitored devices when hardware changes
+
+3. Button Event Handling
+
+Captures button press/release events via the Linux input subsystem
+Provides a callback system for responding to button events
+Has a special callback for WPS buttons (codes 0x211 or 0x100)
+
+4. Utility Functions
+
+Logging to syslog (and optionally stdout for debug)
+Daemonization support (running as a background service)
+PID file management for service control
+
+Running Modes
+The program can run in several modes:
+
+As a daemon (background service)
+In foreground mode (with console output)
+With debug logging enabled
+With a custom WPS button callback that can trigger Wi-Fi setup actions
+
+How It Works
+
+The main program initializes and either daemonizes or runs in foreground
+It scans for existing input devices and starts monitoring them
+It starts a netlink thread to watch for device changes
+When a button is pressed on any monitored device, the registered callback is called
+If using the custom WPS callback, WPS button presses are specially handled
