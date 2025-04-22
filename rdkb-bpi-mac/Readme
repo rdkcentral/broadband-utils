@@ -1,0 +1,75 @@
+
+dk-bpi-mac$ make
+Compiling source/mac_generation.cpp for x86 architecture...
+g++ -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude  -c source/mac_generation.cpp -o build/x86/mac_generation.o
+Compiling source/main.cpp for x86 architecture...
+g++ -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude  -c source/main.cpp -o build/x86/main.o
+Compiling source/path_utils.cpp for x86 architecture...
+g++ -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude  -c source/path_utils.cpp -o build/x86/path_utils.o
+Compiling source/serial_utils.cpp for x86 architecture...
+g++ -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude  -c source/serial_utils.cpp -o build/x86/serial_utils.o
+Building for x86 architecture...
+g++ -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude  build/x86/mac_generation.o build/x86/main.o build/x86/path_utils.o build/x86/serial_utils.o -o bin/assign_mac_x86
+Note: Will use ./serial_number.txt for x86 build
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ ls
+Makefile  Readme  bin  build  include  serial_number.txt  source
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ cd bin/
+(myenv) ubuntu@speed:~/rdk-bpi-mac/bin$ ls
+assign_mac_x86
+(myenv) ubuntu@speed:~/rdk-bpi-mac/bin$ ./assign_mac_x86 
+Read serial number: 38c3bbca040fc3df410205516a19c6ba
+Generated MAC address for lan0: 02:01:00:19:c6:ba
+Generated MAC address for lan1: 02:01:01:19:c6:ba
+Generated MAC address for lan2: 02:01:02:19:c6:ba
+Generated MAC address for lan3: 02:01:03:19:c6:ba
+Generated MAC address for wifi0: 02:02:00:19:c6:ba
+Generated MAC address for wifi1: 02:02:01:19:c6:ba
+Generated MAC address for wifi2: 02:02:02:19:c6:ba
+Wrote all MAC addresses to ./mac_addresses.txt
+MAC addresses written to file successfully
+//--
+-mac$ make ARCH=aarch64
+Compiling source/mac_generation.cpp for aarch64 architecture...
+aarch64-linux-gnu-g++ -static -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude -DAARCH64_BUILD -c source/mac_generation.cpp -o build/aarch64/mac_generation.o
+Compiling source/main.cpp for aarch64 architecture...
+aarch64-linux-gnu-g++ -static -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude -DAARCH64_BUILD -c source/main.cpp -o build/aarch64/main.o
+Compiling source/path_utils.cpp for aarch64 architecture...
+aarch64-linux-gnu-g++ -static -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude -DAARCH64_BUILD -c source/path_utils.cpp -o build/aarch64/path_utils.o
+Compiling source/serial_utils.cpp for aarch64 architecture...
+aarch64-linux-gnu-g++ -static -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude -DAARCH64_BUILD -c source/serial_utils.cpp -o build/aarch64/serial_utils.o
+Building for aarch64 architecture with full static linking...
+aarch64-linux-gnu-g++ -static -std=c++14 -Wall -Wextra -Werror -pedantic -Wconversion -Wshadow -Wcast-qual -Wcast-align -Wdouble-promotion -Wformat=2 -Wuninitialized -Wnull-dereference -O2 -Iinclude -DAARCH64_BUILD build/aarch64/mac_generation.o build/aarch64/main.o build/aarch64/path_utils.o build/aarch64/serial_utils.o -o bin/assign_mac_aarch64
+Note: Will use /nvram/serial_number.txt for aarch64 build
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ 
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ ls
+Makefile  Readme  bin  build  include  serial_number.txt  source
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ ls bin/
+assign_mac_aarch64  assign_mac_x86  mac_addresses.txt  mac_assigned
+(myenv) ubuntu@speed:~/rdk-bpi-mac$ cd bin/
+(myenv) ubuntu@speed:~/rdk-bpi-mac/bin$ ls
+assign_mac_aarch64  assign_mac_x86  mac_addresses.txt  mac_assigned
+
+
+GW:/nvram# ./assign_mac_aarch64 
+Read serial number: 38c3bbca040fc3df410205516a19c6ba
+Generated MAC address for lan0: 02:01:00:19:c6:ba
+Generated MAC address for lan1: 02:01:01:19:c6:ba
+Generated MAC address for lan2: 02:01:02:19:c6:ba
+Generated MAC address for lan3: 02:01:03:19:c6:ba
+Generated MAC address for wifi0: 02:02:00:19:c6:ba
+Generated MAC address for wifi1: 02:02:01:19:c6:ba
+Generated MAC address for wifi2: 02:02:02:19:c6:ba
+Wrote all MAC addresses to /nvram/mac_addresses.txt
+MAC addresses written to file successfully
+root@Filogic-GW:/nvram# ./assign_mac_aarch64 
+MAC addresses have already been assigned. Exiting.
+root@Filogic-GW:/nvram# cat mac_addresses.txt 
+# MAC addresses generated on: 2025-03-22 18:26:15
+lan0=02:01:00:19:c6:ba
+lan1=02:01:01:19:c6:ba
+lan2=02:01:02:19:c6:ba
+lan3=02:01:03:19:c6:ba
+wifi0=02:02:00:19:c6:ba
+wifi1=02:02:01:19:c6:ba
+wifi2=02:02:02:19:c6:ba
+root@Filogic-GW:/nvram# 
