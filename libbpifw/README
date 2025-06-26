@@ -1,0 +1,45 @@
+# libfwbpi - Firmware Bank Programming Interface
+
+A C library for dual-bank firmware updates on embedded systems.
+
+## Features
+
+- Dual-bank (A/B) firmware update support
+- WIC image handling and partition management
+- MD5 verification for integrity checking
+- Progress callbacks for status monitoring
+- Clean C API with comprehensive error handling
+
+## Building
+
+```bash
+# Build library and examples
+make
+
+# Build debug version
+make debug
+
+# Run tests
+make check
+
+# Install system-wide
+sudo make install
+```
+
+## Quick Start
+
+```c
+#include <libfwbpi.h>
+
+int main() {
+    fwbpi_init(NULL);
+    fwbpi_result_t result = fwbpi_update_firmware("http://server/firmware.wic.bz2");
+    fwbpi_cleanup();
+    return (result == FWBPI_SUCCESS) ? 0 : 1;
+}
+```
+
+## Documentation
+
+See `docs/` directory for detailed API documentation and examples.
+
