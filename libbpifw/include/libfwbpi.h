@@ -1,3 +1,4 @@
+// include/libfwbpi.h - Complete Header File
 #ifndef LIBFWBPI_H
 #define LIBFWBPI_H
 
@@ -17,6 +18,9 @@ typedef enum {
     FWBPI_ERROR_BANK_DETECTION_FAILED = -9
 } fwbpi_result_t;
 
+// Progress callback function type
+typedef void (*fwbpi_progress_callback_t)(const char* stage, int percent, const char* message);
+
 // Bank information structure
 typedef struct {
     char active_bank;                    // 'A' or 'B'
@@ -28,9 +32,6 @@ typedef struct {
     long passive_kernel_offset;          // Offset in WIC image
     long passive_rootfs_offset;          // Offset in WIC image
 } fwbpi_bank_info_t;
-
-// Progress callback function type
-typedef void (*fwbpi_progress_callback_t)(const char* stage, int percent, const char* message);
 
 // Configuration structure
 typedef struct {

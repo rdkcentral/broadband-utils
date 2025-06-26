@@ -43,13 +43,14 @@ static const fwbpi_config_t DEFAULT_CONFIG = {
 static int execute_command(const char* cmd);
 static void report_progress(const char* stage, int percent, const char* message);
 static int safe_setenv(const char* name, const char* value, int overwrite);
+static long bytes_to_blocks(long bytes);
 
 //=============================================================================
 // Public API Implementation
 //=============================================================================
 
 fwbpi_result_t fwbpi_init(const fwbpi_config_t* config) {
-    printf("Funcation Name is %s\n",__FUNCTION__); 
+    printf("Function Name is %s\n", __FUNCTION__); 
     if (g_initialized) {
         return FWBPI_SUCCESS; // Already initialized
     }
@@ -72,7 +73,7 @@ fwbpi_result_t fwbpi_init(const fwbpi_config_t* config) {
 }
 
 void fwbpi_cleanup(void) {
-     printf("Funcation Name is %s\n",__FUNCTION__);
+    printf("Function Name is %s\n", __FUNCTION__);
     if (!g_initialized) return;
 
     // Cleanup any mounted filesystems
@@ -93,7 +94,8 @@ fwbpi_result_t fwbpi_update_firmware(const char* image_path) {
     fwbpi_result_t result;
     fwbpi_bank_info_t bank_info;
     int boot_switch_required = 1;
-
+    
+    printf("Function Name is %s\n", __FUNCTION__); 
     if (!g_initialized) {
         return FWBPI_ERROR_INVALID_PARAM;
     }
@@ -191,6 +193,7 @@ fwbpi_result_t fwbpi_create_staging_area(void) {
     }
     
     if (mount(g_config.staging_device, g_config.staging_mount, "ext4", 0, NULL) != 0) {
+        printf("[ERROR] Mount failed: %s\n", strerror(errno));
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
@@ -199,11 +202,19 @@ fwbpi_result_t fwbpi_create_staging_area(void) {
 
 fwbpi_result_t fwbpi_download_firmware(const char* image_path) {
     char cmd[MAX_CMD];
+    const char* http_server = getenv("HTTP_SERVER");
+    
+    if (http_server) {
+        printf("[INFO] Downloading firmware from %s...\n", http_server);
+    } else {
+        printf("[INFO] Downloading firmware...\n");
+    }
     
     snprintf(cmd, sizeof(cmd), "wget -O %s/firmware.bin.wic.bz2 \"%s\"", 
              g_config.staging_mount, image_path);
     
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Download failed\n");
         return FWBPI_ERROR_DOWNLOAD_FAILED;
     }
     
@@ -216,6 +227,8 @@ fwbpi_result_t fwbpi_download_firmware(const char* image_path) {
 fwbpi_result_t fwbpi_decompress_image(void) {
     char cmd[MAX_CMD];
     
+    printf("[INFO] Decompressing image...\n");
+    
     snprintf(cmd, sizeof(cmd), "bzcat %s/firmware.bin.wic.bz2 > %s", 
              g_config.staging_mount, g_config.temp_wic_path);
     
@@ -226,6 +239,8 @@ fwbpi_result_t fwbpi_decompress_image(void) {
     snprintf(cmd, sizeof(cmd), "chmod 644 %s", g_config.temp_wic_path);
     execute_command(cmd);
     
+    printf("[INFO] Image Decompressed successfully.\n");
+    
     return FWBPI_SUCCESS;
 }
 
@@ -235,6 +250,7 @@ long fwbpi_get_wic_partition_offset(const char* wic_file, int part_index) {
     long sector = 0;
     
     if (access(wic_file, F_OK) != 0) {
+        printf("[ERROR] WIC image not found: %s\n", wic_file);
         return -1;
     }
     
@@ -249,6 +265,7 @@ long fwbpi_get_wic_partition_offset(const char* wic_file, int part_index) {
     }
     
     if (fscanf(fp, "%ld", &sector) != 1) {
+        printf("[ERROR] Could not find partition %d in %s\n", part_index, wic_file);
         pclose(fp);
         return -1;
     }
@@ -278,7 +295,7 @@ fwbpi_result_t fwbpi_get_bank_info(fwbpi_bank_info_t* bank_info) {
     }
     fclose(fp);
     
-    // Extract root= parameter
+    // Extract root= parameter (matching shell script logic)
     char* root_start = strstr(cmdline, "root=");
     if (!root_start) {
         return FWBPI_ERROR_BANK_DETECTION_FAILED;
@@ -291,8 +308,9 @@ fwbpi_result_t fwbpi_get_bank_info(fwbpi_bank_info_t* bank_info) {
     }
     strcpy(active_rootfs, root_start);
     
-    // Determine bank configuration
+    // Determine bank configuration (matching shell script exactly)
     if (strcmp(active_rootfs, ROOTFS_A) == 0) {
+        printf("[INFO] Active Bank is A. Updating Bank B.\n");
         bank_info->active_bank = 'A';
         bank_info->passive_rootfs = ROOTFS_B;
         bank_info->passive_kernel = KERNEL_B;
@@ -300,6 +318,7 @@ fwbpi_result_t fwbpi_get_bank_info(fwbpi_bank_info_t* bank_info) {
         bank_info->next_active_partition = 7;
         bank_info->next_rootfs = "/dev/mmcblk0p8";
     } else {
+        printf("[INFO] Active Bank is B. Updating Bank A.\n");
         bank_info->active_bank = 'B';
         bank_info->passive_rootfs = ROOTFS_A;
         bank_info->passive_kernel = KERNEL_A;
@@ -318,6 +337,13 @@ fwbpi_result_t fwbpi_get_bank_info(fwbpi_bank_info_t* bank_info) {
         return FWBPI_ERROR_PARTITION_FAILED;
     }
     
+    // Display bank information like shell script
+    printf("[INFO] Active Bank: %c\n", bank_info->active_bank);
+    printf("[INFO] Passive Kernel Partition: %s\n", bank_info->passive_kernel);
+    printf("[INFO] Passive Kernel Offset: %ld\n", bank_info->passive_kernel_offset);
+    printf("[INFO] Passive Rootfs Partition: %s\n", bank_info->passive_rootfs);
+    printf("[INFO] Passive Rootfs Offset: %ld\n", bank_info->passive_rootfs_offset);
+    
     return FWBPI_SUCCESS;
 }
 
@@ -328,20 +354,24 @@ fwbpi_result_t fwbpi_update_kernel_partition(const fwbpi_bank_info_t* bank_info)
         return FWBPI_ERROR_INVALID_PARAM;
     }
     
+    printf("[INFO] Mounting passive kernel partition from WIC image...\n");
     execute_command("mkdir -p /extblock/kernel_from_image");
     
     snprintf(cmd, sizeof(cmd), "mount -o loop,offset=%ld %s /extblock/kernel_from_image", 
              bank_info->passive_kernel_offset, g_config.temp_wic_path);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Mounting kernel image from file failed\n");
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
-    // Unmount passive kernel if mounted
+    // Ensure partition is unmounted before formatting
     snprintf(cmd, sizeof(cmd), "umount %s 2>/dev/null || true", bank_info->passive_kernel);
     execute_command(cmd);
     
+    printf("[INFO] Formatting and mounting kernel (fitImage) from image to passive kernel partition...\n");
     snprintf(cmd, sizeof(cmd), "mkfs.vfat -F 32 %s", bank_info->passive_kernel);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] mkfs.vfat failed\n");
         execute_command("umount /extblock/kernel_from_image");
         return FWBPI_ERROR_PARTITION_FAILED;
     }
@@ -349,18 +379,22 @@ fwbpi_result_t fwbpi_update_kernel_partition(const fwbpi_bank_info_t* bank_info)
     execute_command("mkdir -p /mnt/boot_b");
     snprintf(cmd, sizeof(cmd), "mount %s /mnt/boot_b", bank_info->passive_kernel);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Kernel mount failed\n");
         execute_command("umount /extblock/kernel_from_image");
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
     // Check if fitImage exists
     if (access("/extblock/kernel_from_image/fitImage", F_OK) != 0) {
+        printf("[ERROR] [ERROR] [ERROR] [ERROR] [ERROR] fitImage not found in mounted image partition!\n");
+        execute_command("ls -l /extblock/kernel_from_image");
         execute_command("umount /extblock/kernel_from_image");
         execute_command("umount /mnt/boot_b");
         return FWBPI_ERROR_FILE_NOT_FOUND;
     }
     
     if (execute_command("rsync -a --delete /extblock/kernel_from_image/ /mnt/boot_b/") != 0) {
+        printf("[ERROR] fitImage copy failed\n");
         execute_command("umount /extblock/kernel_from_image");
         execute_command("umount /mnt/boot_b");
         return FWBPI_ERROR_SYSTEM_CMD_FAILED;
@@ -370,6 +404,15 @@ fwbpi_result_t fwbpi_update_kernel_partition(const fwbpi_bank_info_t* bank_info)
     execute_command("umount /extblock/kernel_from_image");
     execute_command("umount /mnt/boot_b");
     execute_command("rm -rf /extblock/kernel_from_image");
+    
+    // Verification mount like shell script
+    execute_command("mkdir -p /mnt/verify_kernel");
+    snprintf(cmd, sizeof(cmd), "mount %s /mnt/verify_kernel && ls /mnt/verify_kernel", 
+             bank_info->passive_kernel);
+    execute_command(cmd);
+    execute_command("umount /mnt/verify_kernel");
+    
+    printf("[INFO] Kernel bank switch complete.\n");
     
     return FWBPI_SUCCESS;
 }
@@ -381,20 +424,25 @@ fwbpi_result_t fwbpi_update_rootfs_partition(const fwbpi_bank_info_t* bank_info)
         return FWBPI_ERROR_INVALID_PARAM;
     }
     
+    printf("[INFO] Flashing rootfs to passive rootfs partition...\n");
+    printf("[INFO] Mounting passive rootfs partition from WIC image...\n");
     execute_command("mkdir -p /tmp/rootfs_from_image");
     
     snprintf(cmd, sizeof(cmd), "mount -o loop,offset=%ld %s /tmp/rootfs_from_image", 
              bank_info->passive_rootfs_offset, g_config.temp_wic_path);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Mounting rootfs image from file failed\n");
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
-    // Unmount passive rootfs if mounted
+    // Ensure partition is unmounted before formatting
     snprintf(cmd, sizeof(cmd), "umount %s 2>/dev/null || true", bank_info->passive_rootfs);
     execute_command(cmd);
     
+    printf("[INFO] Formatting and mounting rootfs from image to passive rootfs partition...\n");
     snprintf(cmd, sizeof(cmd), "mkfs.ext4 -F %s", bank_info->passive_rootfs);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Rootfs mkfs failed\n");
         execute_command("umount /tmp/rootfs_from_image");
         return FWBPI_ERROR_PARTITION_FAILED;
     }
@@ -402,11 +450,13 @@ fwbpi_result_t fwbpi_update_rootfs_partition(const fwbpi_bank_info_t* bank_info)
     execute_command("mkdir -p /mnt/rootfs_b");
     snprintf(cmd, sizeof(cmd), "mount %s /mnt/rootfs_b", bank_info->passive_rootfs);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Rootfs mount failed\n");
         execute_command("umount /tmp/rootfs_from_image");
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
     if (execute_command("rsync -a --delete /tmp/rootfs_from_image/ /mnt/rootfs_b/") != 0) {
+        printf("[ERROR] Rootfs rsync failed\n");
         execute_command("umount /tmp/rootfs_from_image");
         execute_command("umount /mnt/rootfs_b");
         return FWBPI_ERROR_SYSTEM_CMD_FAILED;
@@ -416,6 +466,15 @@ fwbpi_result_t fwbpi_update_rootfs_partition(const fwbpi_bank_info_t* bank_info)
     execute_command("umount /tmp/rootfs_from_image");
     execute_command("umount /mnt/rootfs_b");
     execute_command("rm -rf /tmp/rootfs_from_image");
+    
+    // Verification mount like shell script
+    execute_command("mkdir -p /mnt/verify_rootfs");
+    snprintf(cmd, sizeof(cmd), "mount %s /mnt/verify_rootfs && ls /mnt/verify_rootfs", 
+             bank_info->passive_rootfs);
+    execute_command(cmd);
+    execute_command("umount /mnt/verify_rootfs");
+    
+    printf("[INFO] Rootfs bank switch complete.\n");
     
     return FWBPI_SUCCESS;
 }
@@ -428,6 +487,8 @@ fwbpi_result_t fwbpi_verify_kernel_md5(const fwbpi_bank_info_t* bank_info) {
     if (!bank_info) {
         return FWBPI_ERROR_INVALID_PARAM;
     }
+    
+    printf("[INFO] Verifying flashed Passive kernel MD5...\n");
     
     // Mount and get MD5 of written kernel
     execute_command("mkdir -p /mnt/verify_kernel");
@@ -442,13 +503,20 @@ fwbpi_result_t fwbpi_verify_kernel_md5(const fwbpi_bank_info_t* bank_info) {
     snprintf(cmd, sizeof(cmd), "mount -o loop,offset=%ld %s /extblock/kernel_from_image", 
              bank_info->passive_kernel_offset, g_config.temp_wic_path);
     if (execute_command(cmd) != 0) {
+        printf("[ERROR] Mounting kernel image for MD5 failed\n");
         return FWBPI_ERROR_MOUNT_FAILED;
     }
     
     execute_command("md5sum /extblock/kernel_from_image/fitImage > passivekernel_expected.md5");
     execute_command("umount /extblock/kernel_from_image");
     
-    // Read MD5 values
+    // Display MD5 values like shell script
+    printf("[INFO] Expected Kernel MD5:\n");
+    execute_command("cat passivekernel_expected.md5");
+    printf("[INFO] Written Kernel MD5:\n");
+    execute_command("cat passivekernel_written.md5");
+    
+    // Read MD5 values for comparison
     fp1 = fopen("passivekernel_expected.md5", "r");
     fp2 = fopen("passivekernel_written.md5", "r");
     
@@ -468,6 +536,7 @@ fwbpi_result_t fwbpi_verify_kernel_md5(const fwbpi_bank_info_t* bank_info) {
     fclose(fp2);
     
     if (strcmp(expected_md5, written_md5) != 0) {
+        printf("[ERROR] Kernel MD5 mismatch!\n");
         return FWBPI_ERROR_MD5_MISMATCH;
     }
     
@@ -475,6 +544,7 @@ fwbpi_result_t fwbpi_verify_kernel_md5(const fwbpi_bank_info_t* bank_info) {
 }
 
 fwbpi_result_t fwbpi_perform_boot_switch(int enable_switch) {
+    // BL2 and FIP Bank Switch
     if (enable_switch) {
         // Backup current BL2 and FIP
         if (execute_command("dd if=/dev/mmcblk0p1 of=/tmp/bl2_backup.img bs=512") != 0 ||
@@ -493,6 +563,8 @@ fwbpi_result_t fwbpi_perform_boot_switch(int enable_switch) {
             execute_command("dd if=/tmp/fip_backup.bin of=/dev/mmcblk0p6 bs=512 conv=fsync") != 0) {
             return FWBPI_ERROR_SYSTEM_CMD_FAILED;
         }
+    } else {
+        printf("[WARN] Skipping boot switch due to failed kernel verification.\n");
     }
     
     return FWBPI_SUCCESS;
@@ -515,6 +587,7 @@ const char* fwbpi_get_error_string(fwbpi_result_t result) {
 }
 
 fwbpi_result_t fwbpi_reboot_system(void) {
+    printf("[INFO] Rebooting system...\n");
     return execute_command("reboot -f") == 0 ? FWBPI_SUCCESS : FWBPI_ERROR_SYSTEM_CMD_FAILED;
 }
 
@@ -555,3 +628,6 @@ static void report_progress(const char* stage, int percent, const char* message)
     }
 }
 
+static long bytes_to_blocks(long bytes) {
+    return bytes / 512;
+}

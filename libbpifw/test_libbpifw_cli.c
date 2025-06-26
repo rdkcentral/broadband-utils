@@ -1,4 +1,3 @@
-// test_libfwbpi_cli.c - Command Line Function Tester
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

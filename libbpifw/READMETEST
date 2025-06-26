@@ -1,8 +1,8 @@
-# Build your library first
-make clean && make
-
-# Compile the test tool
-gcc -o test_cli test_libfwbpi_cli.c -I./include -L./build/lib -lfwbpi
-
-# Make it executable
-chmod +x test_cli
+-# Build your library first
+-make clean && make
+-
+-# Compile the test tool
+-gcc -o test_cli test_libfwbpi_cli.c -I./include -L./build/lib -lfwbpi
+-
+-# Make it executable
+-chmod +x test_cli
