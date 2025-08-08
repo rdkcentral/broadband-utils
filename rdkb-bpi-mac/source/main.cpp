@@ -39,6 +39,12 @@ int main() {
         {"wifi0", 0x02, 0x00},
         {"wifi1", 0x02, 0x01},
         {"wifi2", 0x02, 0x02}
+#if defined(_EM_BUILD_)
+        ,{"wifi1.1", 0x02, 0x03}
+#if defined(_EM_EXT_BUILD_) 
+        ,{"wifi0.1", 0x02, 0x04}
+#endif
+#endif
     };
     
     // Read serial number
