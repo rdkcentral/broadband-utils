@@ -1,0 +1,39 @@
+root@Filogic-GW:/rdklogs/logs# gw_lan_refresh
+[  619.265690] brlan0: port 1(lan1) entered disabled state
+[  619.275415] mt7530 mdio-bus:1f lan2: Link is Down
+[  619.281093] brlan0: port 2(lan2) entered disabled state
+[  619.291225] brlan0: port 3(lan3) entered disabled state
+gw_lan_refresh
+refresh_external_switch(): setting admin status down for port 1
+refresh_external_switch(): setting admin status down for port 2
+refresh_external_switch(): setting admin status down for port 3
+[  623.300639] mt7530 mdio-bus:1f lan1: configuring for phy/gmii link mode
+[  623.307505] 8021q: adding VLAN 0 to HW filter on device lan1
+[  623.317077] mt7530 mdio-bus:1f lan2: configuring for phy/gmii link mode
+[  623.324052] 8021q: adding VLAN 0 to HW filter on device lan2
+[  623.333377] mt7530 mdio-bus:1f lan3: configuring for phy/gmii link mode
+[  623.340286] 8021q: adding VLAN 0 to HW filter on device lan3
+root@Filogic-GW:/rdklogs/logs# [  623.530492] wifi1: moving STA e0:1f:88:f9:ac:36 to state 3
+[  623.556269] wifi1: Rx BA session stop requested for e0:1f:88:f9:ac:36 tid 0 recipient reason: 36
+[  623.565837] wifi1: Rx BA session stop requested for e0:1f:88:f9:ac:36 tid 1 recipient reason: 36
+[  623.575016] wifi1: Rx BA session stop requested for e0:1f:88:f9:ac:36 tid 7 recipient reason: 36
+[  623.584323] wifi1: Tx BA session stop requested for e0:1f:88:f9:ac:36 tid 0
+[  623.620043] wifi1: Tx BA session stop requested for e0:1f:88:f9:ac:36 tid 1
+[  623.644235] wifi1: Tx BA session stop requested for e0:1f:88:f9:ac:36 tid 4
+[  623.672113] wifi1: Tx BA session stop requested for e0:1f:88:f9:ac:36 tid 7
+[  623.752069] mt7996e 0000:01:00.0: mt7996_set_key: keyidx=0, link_bitmap=0x1 (STA e0:1f:88:f9:ac:36)
+[  623.761882] wifi1: moving STA e0:1f:88:f9:ac:36 to state 2
+[  623.767478] wifi1: moving STA e0:1f:88:f9:ac:36 to state 1
+[  623.773033] mt7996e 0000:01:00.0: mt7996_mac_sta_remove_links: removed_links=0x1
+[  623.780450] mt7996e 0000:01:00.0: mt7996_mcu_add_sta: link=0, wcid=1, newly=0, conn_state=0
+[  623.790781] wifi1: Removed STA e0:1f:88:f9:ac:36
+[  623.795875] wifi1: Destroyed STA e0:1f:88:f9:ac:36
+refresh_external_switch(): setting admin status up for port 1
+refresh_external_switch(): setting admin status up for port 2
+refresh_external_switch(): setting admin status up for port 3
+Successfully set Device.WiFi.AccessPoint.1.X_CISCO_COM_KickAssocDevices
+Successfully set Device.WiFi.AccessPoint.2.X_CISCO_COM_KickAssocDevices
+
+//--                                                                                                                                                This code implements an application to refresh the lan clients associated ports for updating the DHCP configuration.
+Core Functionality
+The program is to refresh all the eth ports except the port which is associated with WAN for BPI R4 device. As part of the refresh it will restart wifi clients using "X_CISCO_COM_KickAssocDevices" DM.
