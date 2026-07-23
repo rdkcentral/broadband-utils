@@ -70,13 +70,19 @@ void default_button_callback(const char *device, int button_code, int value) {
         printf("Failed to initialize RBus: %d\n", err);
     }
 
-    // Set WPS Push Button for Access Point 1
-    log_message(LOG_INFO, "WPS button pressed on device %s - triggering WPS action for 2G", device);
-    set_wps_push_button(handle, "Device.WiFi.AccessPoint.1.WPS.X_CISCO_COM_ActivatePushButton");
-
-    // Set WPS Push Button for Access Point 2
-    log_message(LOG_INFO, "WPS button pressed on device %s - triggering WPS action for 5G", device);
-    set_wps_push_button(handle, "Device.WiFi.AccessPoint.2.WPS.X_CISCO_COM_ActivatePushButton");
+#ifdef CONFIG_EXTENDER
+     // Set WPS Push Button for Station Interface
+     log_message(LOG_INFO, "WPS button pressed on device %s - triggering WPS action for station", device);
+     set_wps_push_button(handle, "Device.WiFi.AccessPoint.16.WPS.X_CISCO_COM_ActivatePushButton");
+#else
+     // Set WPS Push Button for Access Point 1
+     log_message(LOG_INFO, "WPS button pressed on device %s - triggering WPS action for 2G", device);
+     set_wps_push_button(handle, "Device.WiFi.AccessPoint.1.WPS.X_CISCO_COM_ActivatePushButton");
+ 
+     // Set WPS Push Button for Access Point 2
+     log_message(LOG_INFO, "WPS button pressed on device %s - triggering WPS action for 5G", device);
+     set_wps_push_button(handle, "Device.WiFi.AccessPoint.2.WPS.X_CISCO_COM_ActivatePushButton");
+#endif
     sleep(WPS_DELAY);
 
     // Close RBus
